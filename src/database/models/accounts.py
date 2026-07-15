@@ -127,6 +127,13 @@ class UserModel(Base):
         """
         return verify_password(raw_password, self._hashed_password)
 
+    def set_password(self, raw_password: str) -> None:
+        """
+        Hash and set a new password (e.g. during password reset).
+        Uses the same hashing mechanism as user registration.
+        """
+        self.password = raw_password
+
     @validates("email")
     def validate_email(self, key, value):
         return validators.validate_email(value.lower())

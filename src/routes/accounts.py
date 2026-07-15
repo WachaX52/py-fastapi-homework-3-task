@@ -206,7 +206,7 @@ async def reset_password_complete(
         )
 
     try:
-        user.password = reset_data.password
+        user.set_password(reset_data.password)
         await db.delete(token_record)
         await db.commit()
     except SQLAlchemyError:
