@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, delete
@@ -106,9 +107,7 @@ async def activate_account(
             detail="Invalid or expired activation token.",
         )
 
-    expires_at = token_record.expires_at
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    expires_at = cast(datetime, token_record.expires_at).replace(tzinfo=timezone.utc)
 
     if expires_at < datetime.now(timezone.utc):
         await db.delete(token_record)
@@ -196,9 +195,7 @@ async def reset_password_complete(
             detail="Invalid email or token.",
         )
 
-    expires_at = token_record.expires_at
-    if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    expires_at = cast(datetime, token_record.expires_at).replace(tzinfo=timezone.utc)
 
     if expires_at < datetime.now(timezone.utc):
         await db.delete(token_record)
@@ -301,6 +298,12 @@ async def refresh_access_token(
     token_record = result.scalars().first()
 
     if token_record is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token not found.",
+        )
+
+    if token_record.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token not found.",
